@@ -1,0 +1,62 @@
+[1mindexing[0m [34mairbnb_train_x_2024.csv[0m [==================================================] [32m2.15GB/s[0m, eta: [36m 0s[0m                                                                                                                                                                                                                                                                                      [1mindexing[0m [34mairbnb_train_x_2024.csv[0m [================================================] [32m306.90MB/s[0m, eta: [36m 0s[0m                                                                                                                                           [1mindexing[0m [34mairbnb_train_y_2024.csv[0m [================================================] [32m106.47MB/s[0m, eta: [36m 0s[0m                                                                                                                                                    Actual
+Predicted   NO  YES
+      NO  6658 2724
+      YES  422  196
+[1] 2920
+[1] 2724
+         Actual
+Predicted   NO  YES
+      NO  6658 2724
+      YES  422  196
+[1] "True Positive Rate (TPR): 0.0671232876712329"
+[1] "False Positive Rate (FPR): 0.0596045197740113"
+         Actual
+Predicted   NO  YES
+      NO  6658 2724
+      YES  422  196
+[1mindexing[0m [34mairbnb_train_x_2024.csv[0m [==================================================] [32m2.15GB/s[0m, eta: [36m 0s[0m                                                                                                                                                                                                                                                                                      [1mindexing[0m [34mairbnb_train_x_2024.csv[0m [================================================] [32m143.30MB/s[0m, eta: [36m 0s[0m                                                                                                                                           [1mindexing[0m [34mairbnb_train_y_2024.csv[0m [====================================--------------] [32m2.15GB/s[0m, eta: [36m 0s[0m[1mindexing[0m [34mairbnb_train_y_2024.csv[0m [=================================================] [32m67.40MB/s[0m, eta: [36m 0s[0m                                                                                                                                                    Actual
+Predicted   NO  YES
+      NO  6658 2724
+      YES  422  196
+[1] 2920
+[1] 2724
+         Actual
+Predicted   NO  YES
+      NO  6658 2724
+      YES  422  196
+[1] "True Positive Rate (TPR): 0.0671232876712329"
+[1] "False Positive Rate (FPR): 0.0596045197740113"
+[1mindexing[0m [34mairbnb_train_x_2024.csv[0m [==================================================] [32m2.15GB/s[0m, eta: [36m 0s[0m                                                                                                                                           [1mindexing[0m [34mairbnb_train_x_2024.csv[0m [================================================] [32m293.85MB/s[0m, eta: [36m 0s[0m                                                                                                                                           [1mindexing[0m [34mairbnb_train_y_2024.csv[0m [==================================================] [32m2.15GB/s[0m, eta: [36m 0s[0m                                                                                                                                                    Actual
+Predicted   NO  YES
+      NO  1451  298
+      YES 5629 2622
+[1] "True Positive Rate (TPR): 0.897945205479452"
+[1] "False Positive Rate (FPR): 0.042090395480226"
+         Actual
+Predicted   NO  YES
+      NO  1451  298
+      YES 5629 2622
+[1] "True Positive Rate (TPR): 0.897945205479452"
+[1] "False Positive Rate (FPR): 0.042090395480226"
+[1] "True Positive Rate (TPR): 0.897945205479452"
+[1] "False Positive Rate (FPR): 0.042090395480226"
+[1mindexing[0m [34mairbnb_train_x_2024.csv[0m [==================================================] [32m2.15GB/s[0m, eta: [36m 0s[0m                                                                                                                                           [1mindexing[0m [34mairbnb_train_x_2024.csv[0m [================================================] [32m236.00MB/s[0m, eta: [36m 0s[0m                                                                                                                                           [1mindexing[0m [34mairbnb_train_y_2024.csv[0m [==================================================] [32m2.15GB/s[0m, eta: [36m 0s[0m                                                                                                                                           
+Call:
+glm(formula = perfect_rating_score ~ ., family = "binomial", 
+    data = clean_data[, c(selected_features, "perfect_rating_score")])
+
+Coefficients:
+                     Estimate Std. Error z value Pr(>|z|)    
+(Intercept)        -0.5265667  0.0513375  -10.26  < 2e-16 ***
+host_response_rate -0.0040278  0.0005363   -7.51  5.9e-14 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 110421  on 92066  degrees of freedom
+Residual deviance: 110366  on 92065  degrees of freedom
+AIC: 110370
+
+Number of Fisher Scoring iterations: 4
+

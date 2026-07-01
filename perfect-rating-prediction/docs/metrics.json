@@ -1,0 +1,37 @@
+{
+  "n_rows": 92067,
+  "yes_rate": 0.287,
+  "best_model": "XGBoost",
+  "results": {
+    "Logistic": {
+      "AUC": 0.692,
+      "TPR": 0.623,
+      "FPR": 0.341,
+      "Precision": 0.424,
+      "Accuracy": 0.648
+    },
+    "Lasso": {
+      "AUC": 0.692,
+      "TPR": 0.622,
+      "FPR": 0.341,
+      "Precision": 0.424,
+      "Accuracy": 0.649
+    },
+    "RandomForest": {
+      "AUC": 0.724,
+      "TPR": 0.584,
+      "FPR": 0.266,
+      "Precision": 0.47,
+      "Accuracy": 0.691
+    },
+    "XGBoost": {
+      "AUC": 0.731,
+      "TPR": 0.663,
+      "FPR": 0.325,
+      "Precision": 0.451,
+      "Accuracy": 0.672
+    }
+  },
+  "youden_threshold": 0.487,
+  "baseline_accuracy_all_no": 0.713
+}

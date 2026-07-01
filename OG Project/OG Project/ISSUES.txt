@@ -1,0 +1,135 @@
+================================================================================
+AIRBNB "PERFECT RATING SCORE" PREDICTION  --  KNOWN ISSUES & IMPROVEMENTS
+================================================================================
+Group 19 | Data Mining & Predictive Analytics course project (competition entry)
+
+This file documents issues found during a post-hoc review of the modeling
+pipeline (primarily scripts/final/V9.R). These are normal findings for a
+time-boxed competition project and are recorded here for future improvement,
+not as criticism of the original work.
+
+Severity legend:  [CRITICAL] affects the submitted result
+                  [HIGH]     inflates/biases reported performance
+                  [MED]      meaningfully improves results or correctness
+                  [LOW]      code quality / reproducibility
+
+
+--------------------------------------------------------------------------------
+1. CORRECTNESS BUGS  (fix first -- these affected the actual submission)
+--------------------------------------------------------------------------------
+
+[CRITICAL] Final CSV writes the wrong object.
+   At the end of V9.R the final model is rf_model1, which produces
+   `binary_predictions1`. However the export line reads:
+       write.table(binary_predictions, "perfect_rating_score_group19.csv", ...)
+   There is no variable named `binary_predictions` -- only
+   binary_predictions_lasso / _ridge / _RF / binary_predictions1.
+   The submission therefore wrote a stale/undefined object, not the
+   intended final RF predictions.
+   FIX: write.table(binary_predictions1, ...).
+
+[CRITICAL] mode() does not return the statistical mode.
+   bathrooms = ifelse(is.na(bathrooms), mode(bathrooms, na.rm=TRUE), bathrooms)
+   Base R mode() returns the STORAGE TYPE (the string "numeric"), not the most
+   common value. This line does nothing useful (and would coerce to NA).
+   Note: bathrooms NAs were already mean-imputed earlier, so the line is dead.
+   FIX: compute a true mode, or drop the line.
+
+[HIGH] You validate one model but submit a different one.
+   The evaluation RF (rf_model) is trained on selected_lasso_features, but the
+   submitted RF (rf_model1) is trained on the full selected_features set.
+   The model whose TPR/FPR you measured is NOT the model you shipped.
+   FIX: evaluate and submit the same feature set / same fitted model.
+
+
+--------------------------------------------------------------------------------
+2. METHODOLOGY  (these bias reported performance upward)
+--------------------------------------------------------------------------------
+
+[HIGH] Data leakage in imputation / derived means.
+   Mean imputation across numeric columns and average_months_since_host_listed
+   are computed on the ENTIRE training set BEFORE the train/validation split.
+   The held-out validation rows leak their statistics into training, so
+   reported TPR/FPR are optimistic.
+   FIX: compute imputation values on the training fold only, then apply the
+        same values to validation and test.
+
+[HIGH] Test document-term matrix is built from a separate vocabulary.
+   The test text DTM learns a NEW vocabulary on the test set, then columns are
+   intersected with train. This can silently drop informative amenity tokens
+   and risks column misalignment.
+   FIX: fit the vectorizer on TRAIN, then apply that same vectorizer to TEST so
+        columns align by construction.
+
+[MED] Inconsistent train/validation splits across models.
+   Logistic uses createDataPartition (seed 45); Lasso/Ridge use sample (seed 40);
+   RF/XGB use sample (seed 45). Different splits make model comparison
+   apples-to-oranges.
+   FIX: use one shared split (ideally shared CV folds) for all models.
+
+[MED] Unseen factor levels not handled.
+   state / room_type are factors; the test set may contain levels not present in
+   training, which can break glm / randomForest prediction.
+   FIX: align factor levels between train and test (or group rare levels).
+
+
+--------------------------------------------------------------------------------
+3. MODELING IMPROVEMENTS  (likely to raise the real competition score)
+--------------------------------------------------------------------------------
+
+[MED] Report AUC, not just a single-threshold confusion matrix.
+   Thresholds (0.435, 0.45, 0.452, 0.49) appear hand-picked per model.
+   If the competition grades TPR at a capped FPR, tune the threshold explicitly
+   on validation to maximize that metric, and compare models on AUC first.
+
+[MED] Submit the stronger model.
+   XGBoost typically wins on this kind of tabular data, yet the submission uses
+   Random Forest with default hyperparameters. Consider submitting tuned
+   XGBoost, or ensembling RF + XGBoost.
+
+[MED] Tune hyperparameters.
+   RF runs on defaults (mtry, ntree untouched); XGB params are hand-set.
+   Even a small CV grid would help.
+
+[LOW] square_feet is mostly missing in Airbnb data.
+   Mean-imputing a near-empty column injects noise. Consider dropping it.
+
+
+--------------------------------------------------------------------------------
+4. WHICH MODELS WERE USEFUL
+--------------------------------------------------------------------------------
+Five algorithms were used: Logistic regression, Lasso, Ridge, Random Forest,
+XGBoost (RF appears twice: evaluation + final).
+
+   KEEP: Lasso (used for feature selection -> selected_lasso_features),
+         Random Forest and XGBoost (the real predictors; strong results).
+   DROP/REDUNDANT:
+         - Plain logistic regression: near-random baseline (TPR ~0.067); keep
+           only as a stated baseline.
+         - Ridge: redundant vs Lasso on this sparse, many-dummy data; gives
+           neither better accuracy nor feature selection.
+         - The evaluation RF: mismatched feature set vs the submitted RF, so it
+           did not actually validate the final model.
+
+   Caveat: "useful" here is judged from the code and the partial results in
+   output/model_summaries.txt. A clean same-split AUC comparison across all five
+   models was not re-run.
+
+
+--------------------------------------------------------------------------------
+5. ENGINEERING / REPRODUCIBILITY
+--------------------------------------------------------------------------------
+[LOW] Train and test cleaning blocks are copy-pasted (~80 lines each) and have
+      already drifted slightly. Wrap cleaning in ONE function applied to both
+      to eliminate train/test divergence.
+[LOW] Hardcoded setwd('C:/Users/Bhoomi/...') makes the script non-portable.
+      Use relative paths (here::here() or relative to repo root).
+[LOW] Duplicate library() calls (tidyverse loaded multiple times).
+[LOW] Large data CSVs are excluded from git (see .gitignore) because
+      airbnb_train_x_2024.csv is ~337 MB, above GitHub's 100 MB limit.
+
+================================================================================
+PRIORITY ORDER:  (1) the wrong-variable write, (2) imputation leakage,
+                 (3) validate == submit the same model. These three most
+                 likely cost real accuracy.
+================================================================================

@@ -1,0 +1,21 @@
+# ---- Data (too large for GitHub; airbnb_train_x_2024.csv is ~337 MB) ----
+data/
+*.csv
+
+# Allow the small final prediction output to be tracked
+!output/perfect_rating_score_group19.csv
+
+# ---- R session / temp files ----
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# ---- Office temp lock files ----
+~$*
+*.tmp
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+desktop.ini

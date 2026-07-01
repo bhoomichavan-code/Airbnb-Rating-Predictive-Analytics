@@ -1,0 +1,13 @@
+# Personal / instructional - keep out of the public repo
+CLAUDE.md
+
+# Safety net for large raw data (also covered per-subfolder)
+OG Project/data/
+**/data/raw/
+*.RData
+.Rhistory
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,5 @@
+,CV_AUC_mean,CV_AUC_std
+XGBoost,0.716,0.007
+RandomForest,0.706,0.008
+Logistic,0.687,0.01
+Lasso,0.686,0.01
