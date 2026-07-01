@@ -1,86 +1,107 @@
-# Airbnb "Perfect Rating Score" Prediction
+# Predicting Airbnb "Perfect Rating Score"
 
-A supervised machine-learning project that predicts whether an Airbnb listing
-will earn a **perfect guest rating score** (binary: `YES` / `NO`). Originally
-built as a Group 19 competition entry for a Data Mining & Predictive Analytics
-course.
+Predict whether an Airbnb listing earns a **perfect rating score** (`YES`/`NO`) from
+structured listing attributes. Binary classification on 92,067 labelled listings, built as a
+clean, interview-explainable rework of an earlier course-competition entry.
 
-> **The original coursework lives in the [`OG Project/`](OG%20Project/) folder.**
-> All the old files — scripts, outputs, docs, the data dictionary, and the
-> known-issues review — are archived there unchanged. This top-level README
-> describes the repository as a whole; new/improved work will live at the root.
-
-## Problem
-
-Given ~92,000 Airbnb listings with 60+ raw features (listing text, host
-attributes, location, property type, price, availability, amenities), predict
-the `perfect_rating_score` label for a held-out test set. The deliverable is a
-CSV of `YES`/`NO` predictions.
-
-## Approach (original submission)
-
-- **Data cleaning & feature engineering** — parse price/fee strings to numbers,
-  impute missing values, and build derived features such as `price_per_person`,
-  `property_category`, `bed_category`, `has_cleaning_fee`, and
-  `months_since_host_listed`.
-- **Text mining** — tokenize `amenities`, `host_verifications`, and `features`
-  into a document-term matrix (binary presence flags); a separate TF-IDF
-  exploration also exists.
-- **Models** — Logistic Regression, Lasso, Ridge, Random Forest, and XGBoost.
-  Lasso is also used for feature selection feeding the tree models.
-- **Evaluation** — confusion matrices with TPR / FPR at tuned thresholds.
-
-Best validation result observed: **TPR ≈ 0.90 at FPR ≈ 0.04** (tree/boosting
-models). See `OG Project/output/model_summaries.txt`.
-
-## Repository structure
-
-```
-.
-├── README.md                       # This file (repo overview)
-└── OG Project/                     # Original coursework (archived, unchanged)
-    ├── ISSUES.txt                  # Post-hoc review: known bugs & improvements
-    ├── .gitignore
-    ├── data/                       # Raw CSVs (gitignored — see "Data" below)
-    ├── scripts/
-    │   ├── final/                  # Final pipeline + group submission code
-    │   │   ├── V9.R
-    │   │   └── Data Mining Code Group 19.R
-    │   ├── iterations/             # Earlier working versions (v1, v2, v6, v7, V8)
-    │   ├── components/             # Lasso, TF-IDF, text mining, variable selection, helper
-    │   └── provided/               # Instructor-provided template code
-    ├── output/
-    │   ├── perfect_rating_score_group19.csv   # Final predictions
-    │   └── model_summaries.txt                # Run logs / confusion matrices
-    └── docs/
-        └── list of variables.xlsx             # Data dictionary
-```
+## Business problem
+A "perfect rating" is a strong trust signal that helps a listing convert. Knowing **which
+listing attributes are associated with perfect ratings** helps hosts prioritise improvements
+and helps the platform flag promising or at-risk listings. We frame it as: given attributes
+available at posting time, estimate the probability of a perfect rating, and convert that to a
+`YES`/`NO` decision at a chosen threshold.
 
 ## Data
+- `airbnb_train_x_2024.csv` (~337 MB) + `airbnb_train_y_2024.csv` — 92,067 labelled listings.
+- Target: `perfect_rating_score`, **28.7% `YES`** (imbalanced).
+- The competition `test_x` file has **no labels**, so it cannot be scored offline. **All metrics
+  here come from a held-out validation split of the labelled data** — every number is reproducible.
+- Raw files are not committed (size); the notebook reads a ~12 MB structured extract in
+  `data/processed/`. See `data/raw/data_dictionary.md`.
 
-The raw data files are **not tracked in git** because
-`airbnb_train_x_2024.csv` is ~337 MB, above GitHub's 100 MB per-file limit.
-Place the following files in `OG Project/data/` to run the pipeline:
+## Approach (kept simple on purpose)
+1. **Structured features only** (no text mining) — see the data dictionary for the full list.
+2. One **stratified 70/30 train/validation split** (fixed seed).
+3. All preprocessing fit **on the training split only** via an sklearn `Pipeline`
+   (median/most-frequent imputation, scaling, one-hot encoding) — this prevents the data
+   leakage that inflated the original project.
+4. Models: **Logistic Regression** (baseline) → **Lasso** (feature selection) →
+   **Random Forest** + **XGBoost** (final). Class imbalance handled with
+   `class_weight="balanced"` / `scale_pos_weight`.
+5. Metrics: **ROC–AUC** headline + confusion matrix giving the contest's **TPR / FPR**,
+   precision and accuracy.
 
-- `airbnb_train_x_2024.csv` — training features
-- `airbnb_train_y_2024.csv` — training labels (`high_booking_rate`, `perfect_rating_score`)
-- `airbnb_test_x_2024.csv` — test features
-- `airbnb_hw2.csv` — earlier homework dataset
+## Project structure
+```
+perfect-rating-prediction/
+├── README.md
+├── requirements.txt
+├── .gitignore
+├── setup_git.bat / setup_git.sh      <- run once locally to init git (see Git below)
+├── data/
+│   ├── raw/        (gitignored; data dictionary tracked)
+│   └── processed/  airbnb_modeling.csv  <- structured extract the notebook reads
+├── notebooks/  airbnb_perfect_rating.ipynb   <- the whole analysis, runs top to bottom
+├── src/        features.py            <- reusable feature-engineering function
+├── visualizations/  roc_curves.png, rf_feature_importance.png, confusion_matrix_best.png
+├── models/     best_model.joblib      (gitignored; regenerated by the notebook)
+└── docs/       findings_summary.md, methodology_notes.md, metrics.json, model_results.csv
+```
 
-## Running
+## How to run
+```bash
+pip install -r requirements.txt
+jupyter nbconvert --to notebook --execute --inplace notebooks/airbnb_perfect_rating.ipynb
+# or open notebooks/airbnb_perfect_rating.ipynb in Jupyter and Run All
+```
+The notebook reads `data/processed/airbnb_modeling.csv` and regenerates every figure, the
+metrics files, and `models/best_model.joblib`.
 
-The main pipeline is `OG Project/scripts/final/V9.R` (R). It reads from `data/`,
-cleans and engineers features, trains the models, and writes predictions to
-`output/`.
+## Results
+Validation split (27,621 listings), default 0.50 threshold. **"Predict all NO" accuracy
+baseline = 0.713.**
 
-> Note: the original scripts use a hardcoded `setwd()` path. Update it to point
-> at this repo (or switch to relative paths) before running.
+| Model         | ROC–AUC | TPR   | FPR   | Precision | Accuracy |
+|---------------|:-------:|:-----:|:-----:|:---------:|:--------:|
+| **XGBoost**   | **0.730** | 0.663 | 0.324 | 0.452 | 0.672 |
+| Random Forest | 0.724 | 0.489 | 0.195 | 0.503 | 0.714 |
+| Lasso         | 0.692 | 0.622 | 0.341 | 0.424 | 0.649 |
+| Logistic      | 0.692 | 0.623 | 0.341 | 0.424 | 0.648 |
 
-## Status & known issues
+TPR/FPR move with the threshold. Using **Youden's J** (threshold ≈ 0.485) the best model
+(XGBoost) reaches **TPR ≈ 0.69 at FPR ≈ 0.35** — the trade-off can be tuned to taste.
 
-This was a time-boxed competition project. A review of the pipeline found
-several bugs and methodology issues (e.g., the final export wrote the wrong
-variable, imputation leakage across the train/validation split, and a mismatch
-between the validated and submitted model). See
-**[`OG Project/ISSUES.txt`](OG%20Project/ISSUES.txt)** for the full list,
-severity ratings, and suggested fixes.
+## Key findings
+- Structured features carry **moderate** signal: AUC rises from **0.69 (logistic)** to
+  **0.73 (XGBoost)** — a real but modest lift, and an honest ceiling for these fields.
+- **XGBoost is best**, just ahead of Random Forest; both beat the linear baseline, so
+  non-linear interactions matter.
+- Accuracy (~0.65–0.71) hugs the **71.3% all-NO baseline**, which is exactly why we lead with
+  AUC and TPR/FPR rather than accuracy on this imbalanced target.
+- Most informative attributes (Random Forest importance): host tenure, availability
+  (365- and 30-day), price and price-per-person, and cleaning fee.
+
+## Roadmap / status
+- [x] Structured feature set defined and documented
+- [x] Leakage-safe preprocessing pipeline (fit on train only)
+- [x] Logistic baseline + Lasso feature selection
+- [x] Random Forest + XGBoost with imbalance handling
+- [x] AUC + TPR/FPR/precision/accuracy reported on one shared split
+- [x] Notebook runs end to end with zero errors; figures + metrics exported
+- [ ] (Future) 5-fold CV and light hyper-parameter tuning
+- [ ] (Future) add listing-text features (TF-IDF) and compare lift
+
+## Git
+This folder is cloud-synced (OneDrive), so init git **locally**: run `setup_git.bat`
+(Windows) or `bash setup_git.sh`, then commit in logical steps, e.g.:
+```bash
+git add notebooks/airbnb_perfect_rating.ipynb && git commit -m "feat: analysis notebook"
+git add visualizations docs && git commit -m "docs: results, figures, findings"
+```
+Keep a linear history on `main` (no merge commits).
+
+## Note on the earlier version
+This reworks an earlier multi-model entry. Main fixes: median-impute price (not 0),
+preprocessing fit on training data only (no leakage), one shared split across models, AUC
+reported alongside TPR/FPR, fewer/cleaner models, and a reproducible top-to-bottom notebook.
+See `docs/methodology_notes.md`.
